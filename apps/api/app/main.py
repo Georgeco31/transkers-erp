@@ -1,0 +1,9 @@
+from fastapi import FastAPI
+
+app = FastAPI(title="Transker ERP API", version="1.0.0")
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
