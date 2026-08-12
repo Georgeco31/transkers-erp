@@ -11,6 +11,7 @@ async function proxy(request: NextRequest, context: Context): Promise<Response> 
   headers.delete("host");
   headers.delete("content-length");
   headers.delete("connection");
+  headers.delete("expect");
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
   const response = await fetch(upstream, {
     method: request.method,
