@@ -24,7 +24,7 @@ Se crea una base temporal, se restaura, se consulta su esquema y se elimina. La 
 1. Haga un backup adicional del estado actual.
 2. Ejecute `.\scripts\windows\restore-transker.ps1 -Backup RUTA.dump`.
 3. El script exige escribir exactamente `RESTAURAR`, detiene web/API, restaura y los inicia nuevamente.
-4. Ejecute `status-transker.ps1`, inicie sesión y verifique registros y reportes.
+4. Antes de reiniciar los servicios, el script sincroniza el administrador restaurado con `ADMIN_USERNAME` y `ADMIN_PASSWORD` del `.env` mediante un hash Argon2 nuevo. Así, restaurar un backup antiguo no reactiva credenciales anteriores.
+5. Ejecute `status-transker.ps1`, inicie sesión y verifique registros y reportes.
 
 Nunca pruebe restauración destruyendo la base actual. Para respaldo diario, use Programador de tareas con `backup-transker.ps1` y una cuenta con acceso a Docker; configure retención en el almacenamiento externo sin borrar automáticamente el único backup disponible.
-

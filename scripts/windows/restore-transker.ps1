@@ -30,6 +30,9 @@ if ($Confirmation -cne "RESTAURAR") { docker compose -f docker-compose.prod.yml 
 docker compose -f docker-compose.prod.yml stop api web
 try {
   docker compose -f docker-compose.prod.yml exec -T db pg_restore -U $DbUser -d $DbName --clean --if-exists --no-owner /tmp/transker_restore.dump
+  if ($LASTEXITCODE -ne 0) { throw "No se pudo restaurar la base productiva." }
+  docker compose -f docker-compose.prod.yml run --rm --no-deps api python -m app.admin_credentials
+  if ($LASTEXITCODE -ne 0) { throw "La base se restauró, pero no fue posible sincronizar el administrador con .env." }
 } finally {
   docker compose -f docker-compose.prod.yml exec -T db rm -f /tmp/transker_restore.dump
   docker compose -f docker-compose.prod.yml start api web

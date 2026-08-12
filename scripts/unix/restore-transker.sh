@@ -27,6 +27,7 @@ read -r confirmation
 [ "$confirmation" = "RESTAURAR" ] || { docker compose -f docker-compose.prod.yml exec -T db rm -f /tmp/transker_restore.dump; echo "Cancelado."; exit 1; }
 docker compose -f docker-compose.prod.yml stop api web
 docker compose -f docker-compose.prod.yml exec -T db pg_restore -U "$db_user" -d "$db_name" --clean --if-exists --no-owner /tmp/transker_restore.dump
+docker compose -f docker-compose.prod.yml run --rm --no-deps api python -m app.admin_credentials
 docker compose -f docker-compose.prod.yml exec -T db rm -f /tmp/transker_restore.dump
 docker compose -f docker-compose.prod.yml start api web
 echo "Restauración completada."
