@@ -21,6 +21,10 @@ export function ErrorMessage({ message }: { message: string }) {
   return <div role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">{message}</div>;
 }
 
+export function SuccessMessage({ message }: { message: string }) {
+  return <div role="status" className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{message}</div>;
+}
+
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, [string, string]> = { completed: ["Completado", "bg-emerald-50 text-emerald-700"], draft: ["Borrador", "bg-amber-50 text-amber-700"], cancelled: ["Cancelado", "bg-rose-50 text-rose-700"], maintenance: ["Mantenimiento", "bg-sky-50 text-sky-700"], repair: ["Reparación", "bg-orange-50 text-orange-700"] };
   const [label, cls] = map[status] ?? [status, "bg-slate-100 text-slate-700"];
@@ -34,4 +38,3 @@ export function BackLink({ href, children = "Volver" }: { href: string; children
 export function SubmitButton({ pending, children }: { pending: boolean; children: ReactNode }) {
   return <button type="submit" disabled={pending} className="btn-primary">{pending ? "Guardando…" : children}</button>;
 }
-

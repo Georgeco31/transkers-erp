@@ -9,6 +9,21 @@ from app.dependencies import AdminUser, CurrentUser, DbSession
 router = APIRouter(tags=["expenses"])
 
 
+def vehicle_expense_json(item: models.VehicleExpense) -> dict:
+    return {
+        "id": item.id,
+        "vehicle_id": item.vehicle_id,
+        "vehicle_plate": item.vehicle.plate,
+        "expense_type": item.expense_type,
+        "expense_date": item.expense_date,
+        "amount": item.amount,
+        "description": item.description,
+        "odometer": item.odometer,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
+    }
+
+
 @router.get("/trip-expense-categories")
 def list_categories(db: DbSession, _: CurrentUser, active: bool | None = None) -> list[dict]:
     stmt = select(models.TripExpenseCategory)
@@ -63,9 +78,21 @@ def list_vehicle_expenses(db: DbSession, _: CurrentUser, vehicle_id: int | None 
     stmt = select(models.VehicleExpense).options(joinedload(models.VehicleExpense.vehicle))
     if vehicle_id: stmt = stmt.where(models.VehicleExpense.vehicle_id == vehicle_id)
     if expense_type: stmt = stmt.where(models.VehicleExpense.expense_type == expense_type)
-    return [{"id": x.id, "vehicle_id": x.vehicle_id, "vehicle_plate": x.vehicle.plate, "expense_type": x.expense_type,
-             "expense_date": x.expense_date, "amount": x.amount, "description": x.description, "odometer": x.odometer}
-            for x in db.scalars(stmt.order_by(models.VehicleExpense.expense_date.desc(), models.VehicleExpense.id.desc())).all()]
+    return [vehicle_expense_json(x) for x in db.scalars(
+        stmt.order_by(models.VehicleExpense.expense_date.desc(), models.VehicleExpense.id.desc())
+    ).all()]
+
+
+@router.get("/vehicle-expenses/{item_id}")
+def get_vehicle_expense(item_id: int, db: DbSession, _: CurrentUser) -> dict:
+    item = db.scalar(
+        select(models.VehicleExpense)
+        .options(joinedload(models.VehicleExpense.vehicle))
+        .where(models.VehicleExpense.id == item_id)
+    )
+    if not item:
+        raise HTTPException(404, "Gasto vehicular no encontrado.")
+    return vehicle_expense_json(item)
 
 
 @router.post("/vehicle-expenses", status_code=201)
@@ -74,7 +101,8 @@ def create_vehicle_expense(payload: schemas.VehicleExpenseInput, db: DbSession, 
     if not vehicle or not vehicle.is_active: raise HTTPException(422, "El vehículo no existe o está inactivo.")
     item = models.VehicleExpense(**payload.model_dump(), created_by=user.id)
     db.add(item); db.commit()
-    return {"id": item.id, **payload.model_dump(), "vehicle_plate": vehicle.plate}
+    item.vehicle = vehicle
+    return vehicle_expense_json(item)
 
 
 @router.put("/vehicle-expenses/{item_id}")
@@ -84,5 +112,5 @@ def update_vehicle_expense(item_id: int, payload: schemas.VehicleExpenseInput, d
     if not vehicle: raise HTTPException(422, "El vehículo no existe.")
     for key, value in payload.model_dump().items(): setattr(item, key, value)
     db.commit()
-    return {"id": item.id, **payload.model_dump(), "vehicle_plate": vehicle.plate}
-
+    item.vehicle = vehicle
+    return vehicle_expense_json(item)

@@ -3,7 +3,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
@@ -70,6 +70,33 @@ def allocate_payment(db: Session, payment: models.ClientPayment) -> None:
             available = money(available - allocation)
         if available <= ZERO:
             break
+
+
+def reallocate_payment(db: Session, payment: models.ClientPayment) -> None:
+    """Release this payment's allocations and apply its current amount FIFO."""
+    db.execute(delete(models.PaymentAllocation).where(models.PaymentAllocation.payment_id == payment.id))
+    db.flush()
+    allocate_payment(db, payment)
+    allocated = payment_allocated_total(db, payment.id)
+    if allocated > money(payment.amount):
+        raise RuntimeError("La suma asignada supera el monto del pago.")
+
+    overallocated_trip = db.scalar(
+        select(models.Trip.id)
+        .join(models.PaymentAllocation)
+        .where(
+            models.Trip.id.in_(
+                select(models.PaymentAllocation.trip_id).where(
+                    models.PaymentAllocation.payment_id == payment.id
+                )
+            )
+        )
+        .group_by(models.Trip.id, models.Trip.agreed_price)
+        .having(func.sum(models.PaymentAllocation.amount) > models.Trip.agreed_price)
+        .limit(1)
+    )
+    if overallocated_trip is not None:
+        raise RuntimeError("La suma asignada supera el valor de un viaje.")
 
 
 def add_manual_allocation(db: Session, payment: models.ClientPayment, trip: models.Trip, amount: Decimal) -> models.PaymentAllocation:

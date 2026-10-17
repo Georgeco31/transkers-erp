@@ -9,6 +9,9 @@
 
 ## Cobranzas
 
+- Al corregir el monto de un pago, sus asignaciones se liberan y se calculan de nuevo del viaje pendiente más antiguo al más reciente dentro de una sola transacción.
+- El cliente de un pago existente no se cambia desde la edición normal.
+
 - Un pago se asigna por defecto a viajes completados pendientes del mismo cliente, del más antiguo al más reciente.
 - La suma asignada nunca puede superar el pago ni el precio del viaje.
 - Un excedente se conserva como saldo a favor no aplicado.
@@ -33,4 +36,3 @@ No es utilidad neta contable. No incluye automáticamente impuestos, depreciaci�
 ## Historial
 
 No hay endpoints de eliminación física para viajes ni movimientos financieros. Clientes, choferes, vehículos y categorías se desactivan mediante `is_active`.
-

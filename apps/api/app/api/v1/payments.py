@@ -13,7 +13,8 @@ def payment_json(db: DbSession, payment: models.ClientPayment) -> dict:
     return {"id": payment.id, "client_id": payment.client_id, "client_name": payment.client.name,
         "payment_date": payment.payment_date, "amount": payment.amount, "allocated": allocated,
         "unapplied": services.money(payment.amount - allocated), "payment_method": payment.payment_method,
-        "reference": payment.reference, "notes": payment.notes, "created_at": payment.created_at}
+        "reference": payment.reference, "notes": payment.notes, "created_at": payment.created_at,
+        "updated_at": payment.updated_at}
 
 
 @router.get("")
@@ -37,12 +38,44 @@ def create_payment(payload: schemas.PaymentInput, db: DbSession, user: CurrentUs
     return payment_json(db, payment)
 
 
+@router.put("/{payment_id}")
+def update_payment(
+    payment_id: int, payload: schemas.PaymentUpdate, db: DbSession, _: CurrentUser
+) -> dict:
+    payment = db.scalar(
+        select(models.ClientPayment)
+        .options(joinedload(models.ClientPayment.client))
+        .where(models.ClientPayment.id == payment_id)
+        .with_for_update()
+    )
+    if not payment:
+        raise HTTPException(404, "Pago no encontrado.")
+    if not db.get(models.Client, payment.client_id):
+        raise HTTPException(422, "El cliente asociado al pago no existe.")
+
+    try:
+        for key, value in payload.model_dump().items():
+            setattr(payment, key, value)
+        db.flush()
+        services.reallocate_payment(db, payment)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return payment_json(db, payment)
+
+
 @router.get("/{payment_id}")
 def get_payment(payment_id: int, db: DbSession, _: CurrentUser) -> dict:
     payment = db.scalar(select(models.ClientPayment).options(joinedload(models.ClientPayment.client)).where(models.ClientPayment.id == payment_id))
     if not payment: raise HTTPException(404, "Pago no encontrado.")
     result = payment_json(db, payment)
-    allocations = db.scalars(select(models.PaymentAllocation).options(joinedload(models.PaymentAllocation.trip)).where(models.PaymentAllocation.payment_id == payment_id)).all()
+    allocations = db.scalars(
+        select(models.PaymentAllocation)
+        .options(joinedload(models.PaymentAllocation.trip))
+        .where(models.PaymentAllocation.payment_id == payment_id)
+        .order_by(models.PaymentAllocation.id)
+    ).all()
     result["allocations"] = [{"id": x.id, "trip_id": x.trip_id, "trip_code": x.trip.code, "amount": x.amount} for x in allocations]
     return result
 
@@ -55,4 +88,3 @@ def create_allocation(payment_id: int, payload: schemas.AllocationInput, db: DbS
     allocation = services.add_manual_allocation(db, payment, trip, payload.amount)
     db.commit()
     return {"id": allocation.id, "payment_id": payment.id, "trip_id": trip.id, "amount": allocation.amount}
-

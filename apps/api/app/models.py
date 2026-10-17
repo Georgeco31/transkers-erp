@@ -141,7 +141,7 @@ class VehicleExpense(TimestampMixin, Base):
     vehicle: Mapped[Vehicle] = relationship(back_populates="expenses")
 
 
-class ClientPayment(Base):
+class ClientPayment(TimestampMixin, Base):
     __tablename__ = "client_payments"
     __table_args__ = (CheckConstraint("amount > 0", name="ck_client_payments_amount_positive"),)
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -151,7 +151,6 @@ class ClientPayment(Base):
     payment_method: Mapped[str | None] = mapped_column(String(80))
     reference: Mapped[str | None] = mapped_column(String(120))
     notes: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     client: Mapped[Client] = relationship(back_populates="payments")
     allocations: Mapped[list["PaymentAllocation"]] = relationship(back_populates="payment")
@@ -170,4 +169,3 @@ class PaymentAllocation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     payment: Mapped[ClientPayment] = relationship(back_populates="allocations")
     trip: Mapped[Trip] = relationship(back_populates="allocations")
-

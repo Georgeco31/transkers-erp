@@ -94,6 +94,16 @@ class PaymentInput(BaseModel):
     auto_allocate: bool = True
 
 
+class PaymentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    payment_date: date
+    amount: Money = Field(gt=Decimal("0.00"), decimal_places=2)
+    payment_method: str | None = Field(default=None, max_length=80)
+    reference: str | None = Field(default=None, max_length=120)
+    notes: str | None = None
+
+
 class AllocationInput(BaseModel):
     trip_id: int
     amount: Money = Field(gt=Decimal("0.00"), decimal_places=2)
@@ -101,4 +111,3 @@ class AllocationInput(BaseModel):
 
 class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
