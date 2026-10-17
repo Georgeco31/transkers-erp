@@ -1,0 +1,2 @@
+import CatalogDetail from "@/components/catalog-detail";
+export default async function Page({params}:{params:Promise<{id:string}>}){const {id}=await params;return <CatalogDetail kind="vehicles" id={id}/>;}

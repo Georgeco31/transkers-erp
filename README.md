@@ -28,3 +28,14 @@ API: `http://localhost:8000` (solo loopback en desarrollo). Web: `http://localho
 
 Consulte `docs/TESTING.md` para ejecutar pruebas de backend, lint, typecheck, build y el escenario integral.
 
+Comandos principales en Windows:
+
+```powershell
+.\scripts\windows\start-transker.ps1
+.\scripts\windows\status-transker.ps1
+.\scripts\windows\backup-transker.ps1
+.\scripts\windows\stop-transker.ps1
+```
+
+La rama `main` representa producción estable y `dev` concentra el desarrollo. No se debe promover `dev` hasta aprobar todos los criterios de `docs/TESTING.md`.
+
